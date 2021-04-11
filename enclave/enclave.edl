@@ -1,0 +1,8 @@
+enclave {
+    trusted {
+        public int ecall_stub(void);
+    };
+
+    untrusted {
+    };
+};

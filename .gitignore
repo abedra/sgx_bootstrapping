@@ -1,0 +1,5 @@
+*.so
+*.o
+bootstrapper
+enclave_t.*
+enclave_u.*
