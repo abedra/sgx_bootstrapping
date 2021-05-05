@@ -102,7 +102,7 @@ int initialize_enclave(sgx_enclave_id_t* eid, const std::string& launch_token_pa
   return 0;
 }
 
-int ocall_save_bootstrap_file(const uint8_t* sealed_data, const size_t sealed_size) {
+int save_bootstrap_file(const uint8_t* sealed_data, const size_t sealed_size) {
   std::ofstream file(BOOTSTRAP_FILE, std::ios::out | std::ios::binary);
 
   if (file.fail()) {
@@ -115,7 +115,7 @@ int ocall_save_bootstrap_file(const uint8_t* sealed_data, const size_t sealed_si
   return 0;
 }
 
-int ocall_load_bootstrap_file(uint8_t* sealed_data, const size_t sealed_size) {
+int load_bootstrap_file(uint8_t* sealed_data, const size_t sealed_size) {
   std::ifstream file(BOOTSTRAP_FILE, std::ios::in | std::ios::binary);
 
   if (file.fail()) {
@@ -128,7 +128,7 @@ int ocall_load_bootstrap_file(uint8_t* sealed_data, const size_t sealed_size) {
   return 0;
 }
 
-int ocall_is_bootstrap_file(void) {
+int is_bootstrap_file(void) {
   std::ifstream file(BOOTSTRAP_FILE, std::ios::in | std::ios::binary);
 
   if (file.fail()) {
@@ -140,22 +140,36 @@ int ocall_is_bootstrap_file(void) {
   return 1;
 }
 
-int main(int argc, char** argv) {
-  if (initialize_enclave(&global_eid, "enclave.token", "enclave.signed.so") < 0) {
-    std::cout << "Fail to initialize enclave." << std::endl;
+int provision() {
+  std::cout << "bootstrap.seal not found" << std::endl;
+
+  int number = 823;
+  size_t sealed_size = sizeof(sgx_sealed_data_t) + sizeof(number);
+  uint8_t* sealed_data = (uint8_t*)malloc(sealed_size);
+  sgx_status_t ecall_status;
+  sgx_status_t status = seal(global_eid, &ecall_status,
+                             (uint8_t*)&number, sizeof(number),
+                             (sgx_sealed_data_t*)sealed_data, sealed_size);
+
+  if (!is_ecall_successful(status, "Sealing failed :(", ecall_status)) {
     return 1;
   }
 
-  std::cout << "Initialization complete" << std::endl;
+  save_bootstrap_file(sealed_data, sealed_size);
 
-  if (ocall_is_bootstrap_file()) {
+  std::cout << "boostrap.seal saved with value: " << number << std::endl;
+
+  return 0;
+}
+
+int load() {
     std::cout << "bootstrap.seal located" << std::endl;
 
     size_t sealed_size = sizeof(sgx_sealed_data_t) + sizeof(int);
     uint8_t* sealed_data = (uint8_t*)malloc(sealed_size);
-    int ocall_status = ocall_load_bootstrap_file(sealed_data, sealed_size);
+    int load_status = load_bootstrap_file(sealed_data, sealed_size);
 
-    if (ocall_status != SGX_SUCCESS) {
+    if (load_status != SGX_SUCCESS) {
       free(sealed_data);
       return -1;
     }
@@ -175,25 +189,17 @@ int main(int argc, char** argv) {
     std::cout << "bootstrap.seal unsealed to: " << unsealed << std::endl;
 
     return 0;
-  }
+}
 
-  std::cout << "bootstrap.seal not found" << std::endl;
-
-  int number = 81;
-  size_t sealed_size = sizeof(sgx_sealed_data_t) + sizeof(number);
-  uint8_t* sealed_data = (uint8_t*)malloc(sealed_size);
-  sgx_status_t ecall_status;
-  sgx_status_t status = seal(global_eid, &ecall_status,
-                             (uint8_t*)&number, sizeof(number),
-                             (sgx_sealed_data_t*)sealed_data, sealed_size);
-
-  if (!is_ecall_successful(status, "Sealing failed :(", ecall_status)) {
+int main(int argc, char** argv) {
+  if (initialize_enclave(&global_eid, "enclave.token", "enclave.signed.so") < 0) {
+    std::cout << "Fail to initialize enclave." << std::endl;
     return 1;
   }
 
-  ocall_save_bootstrap_file(sealed_data, sealed_size);
-
-  std::cout << "boostrap.seal saved with value: " << number << std::endl;
-
-  return 0;
+  if (is_bootstrap_file()) {
+    return load();
+  } else {
+    return provision();
+  }
 }
