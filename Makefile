@@ -31,8 +31,8 @@
 
 ######## SGX SDK Settings ########
 
-SGX_SDK ?= /usr/local/sgx/sgxsdk
-SGX_MODE ?= HW
+SGX_SDK ?= /opt/intel/sgxsdk
+SGX_MODE ?= SIM
 SGX_PRERELEASE=1
 SGX_ARCH ?= x64
 
