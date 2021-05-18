@@ -1,12 +1,14 @@
+#pragma once
+
 #include <fstream>
 
-struct Bootstrap {
-  explicit Bootstrap(std::string bootstrap_file)
-    : bootstrap_file_(std::move(bootstrap_file))
+struct Persistence {
+  explicit Persistence(std::string file_name)
+    : file_name_(std::move(file_name))
   {}
 
   int save(const uint8_t* sealed_data, const size_t sealed_size) const {
-    std::ofstream file(bootstrap_file_, std::ios::out | std::ios::binary);
+    std::ofstream file(file_name_, std::ios::out | std::ios::binary);
 
     if (file.fail()) {
       return 1;
@@ -19,7 +21,7 @@ struct Bootstrap {
   }
 
   int load(uint8_t* sealed_data, const size_t sealed_size) const {
-    std::ifstream file(bootstrap_file_, std::ios::in | std::ios::binary);
+    std::ifstream file(file_name_, std::ios::in | std::ios::binary);
 
     if (file.fail()) {
       return 1;
@@ -31,8 +33,8 @@ struct Bootstrap {
     return 0;
   }
 
-  bool is_bootstrap_file(void) const {
-    std::ifstream file(bootstrap_file_, std::ios::in | std::ios::binary);
+  bool exists(void) const {
+    std::ifstream file(file_name_, std::ios::in | std::ios::binary);
 
     if (file.fail()) {
       return false;
@@ -44,9 +46,9 @@ struct Bootstrap {
   }
 
   const std::string& file_name() const {
-    return bootstrap_file_;
+    return file_name_;
   }
 
 private:
-  std::string bootstrap_file_;
+  std::string file_name_;
 };

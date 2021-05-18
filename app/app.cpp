@@ -2,24 +2,24 @@
 #include "sgx_urts.h"
 #include "sgx_tseal.h"
 #include "EnclaveInitializer.h"
-#include "Bootstrap.h"
+#include "Persistence.h"
 #include <iostream>
 #include <fstream>
 
 sgx_enclave_id_t global_eid = 0;
 
-int load(const Bootstrap &bootstrap) {
+int load(const Persistence &persistence) {
   size_t sealed_size = sizeof(sgx_sealed_data_t) + sizeof(int);
   uint8_t* sealed_data = (uint8_t*)malloc(sealed_size);
-  int load_status = bootstrap.load(sealed_data, sealed_size);
+  int load_status = persistence.load(sealed_data, sealed_size);
 
   if (load_status != SGX_SUCCESS) {
-    std::cout << "Could not load " << bootstrap.file_name() << std::endl;
+    std::cout << "Could not load " << persistence.file_name() << std::endl;
     free(sealed_data);
     return -1;
   }
 
-  std::cout << bootstrap.file_name() << " loaded" << std::endl;
+  std::cout << persistence.file_name() << " loaded" << std::endl;
 
   int unsealed;
   sgx_status_t ecall_status;
@@ -28,14 +28,14 @@ int load(const Bootstrap &bootstrap) {
                                (uint8_t*)&unsealed, sizeof(unsealed));
 
   if (status != SGX_SUCCESS || ecall_status != SGX_SUCCESS) {
-    std::cout << "Failed to unseal " << bootstrap.file_name() << std::endl;
+    std::cout << "Failed to unseal " << persistence.file_name() << std::endl;
     std::cout << "SGX status: " << status << std::endl;
     std::cout << "ECall return value: " << ecall_status << std::endl;
 
     return -1;
   }
 
-  std::cout << bootstrap.file_name() << " unsealed to: " << unsealed << std::endl;
+  std::cout << persistence.file_name() << " unsealed to: " << unsealed << std::endl;
 
   return 0;
 }
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  Bootstrap bootstrap{"bootstrap.seal"};
+  Persistence persistence{"persistence.seal"};
 
-  return load(bootstrap);
+  return load(persistence);
 }

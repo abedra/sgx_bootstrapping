@@ -2,7 +2,7 @@
 *.o
 enclave_t.*
 enclave_u.*
-bootstrap.seal
+*.seal
 enclave.token
 provision
 unseal

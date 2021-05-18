@@ -2,13 +2,13 @@
 #include "sgx_urts.h"
 #include "sgx_tseal.h"
 #include "EnclaveInitializer.h"
-#include "Bootstrap.h"
+#include "Persistence.h"
 #include <iostream>
 #include <fstream>
 
 sgx_enclave_id_t global_eid = 0;
 
-int provision(const Bootstrap &bootstrap) {
+int provision(const Persistence &persistence) {
   int number = 123;
   size_t sealed_size = sizeof(sgx_sealed_data_t) + sizeof(number);
   uint8_t* sealed_data = (uint8_t*)malloc(sealed_size);
@@ -18,16 +18,16 @@ int provision(const Bootstrap &bootstrap) {
                              (sgx_sealed_data_t*)sealed_data, sealed_size);
 
   if (status != SGX_SUCCESS || ecall_status != SGX_SUCCESS) {
-    std::cout << "Failed to unseal " << bootstrap.file_name() << std::endl;
+    std::cout << "Failed to unseal " << persistence.file_name() << std::endl;
     std::cout << "SGX status: " << status << std::endl;
     std::cout << "ECall return value: " << ecall_status << std::endl;
 
     return -1;
   }
 
-  bootstrap.save(sealed_data, sealed_size);
+  persistence.save(sealed_data, sealed_size);
 
-  std::cout << bootstrap.file_name() << " saved with value: " << number << std::endl;
+  std::cout << persistence.file_name() << " saved with value: " << number << std::endl;
 
   return 0;
 }
@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  Bootstrap bootstrap{"bootstrap.seal"};
+  Persistence persistence{"persistence.seal"};
 
-  return provision(bootstrap);
+  return provision(persistence);
 }
