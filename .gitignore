@@ -1,7 +1,8 @@
 *.so
 *.o
-bootstrapper
 enclave_t.*
 enclave_u.*
 bootstrap.seal
 enclave.token
+provision
+unseal

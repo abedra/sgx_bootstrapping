@@ -43,6 +43,10 @@ struct Bootstrap {
     return true;
   }
 
+  const std::string& file_name() const {
+    return bootstrap_file_;
+  }
+
 private:
   std::string bootstrap_file_;
 };
