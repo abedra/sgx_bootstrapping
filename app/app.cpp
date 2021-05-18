@@ -1,7 +1,6 @@
 #include "enclave_u.h"
 #include "sgx_urts.h"
 #include "sgx_tseal.h"
-#include "ECallStatus.h"
 #include "EnclaveInitializer.h"
 #include "Bootstrap.h"
 #include <iostream>
@@ -28,8 +27,12 @@ int load(const Bootstrap &bootstrap) {
                                (sgx_sealed_data_t*)sealed_data, sealed_size,
                                (uint8_t*)&unsealed, sizeof(unsealed));
 
-  if (!ECallStatus::success(status, "Unsealing failed", ecall_status)) {
-    return 1;
+  if (status != SGX_SUCCESS || ecall_status != SGX_SUCCESS) {
+    std::cout << "Failed to unseal " << bootstrap.file_name() << std::endl;
+    std::cout << "SGX status: " << status << std::endl;
+    std::cout << "ECall return value: " << ecall_status << std::endl;
+
+    return -1;
   }
 
   std::cout << bootstrap.file_name() << " unsealed to: " << unsealed << std::endl;
