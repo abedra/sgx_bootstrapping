@@ -14,8 +14,6 @@ You can build this program by running `make`. If you do not have your SGX sdk in
 source /path/to/sgxsdk/environment
 ```
 
-You can then run `./bootstrapper`. The first execution will encrypt an integer inside the enclave and save the file `bootstrap.seal` to disk. Subsequent executions will read the `bootstrap.seal` file and send it to the enclave to be decrypted. The program will then display the integer previously encrypted by the enclave.
-
 ## Hardware vs Simulation Mode
 
 By default, this program will compile in `SIM`, or Simulation mode. This ensures the program will work regardless of hardware support. If you wish to execute this program against a real SGX enclave, you will need to set `SGX_MODE=HW` when running `make`, or update the `Makefile` accordingly.
