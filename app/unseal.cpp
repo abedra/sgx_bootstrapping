@@ -3,6 +3,7 @@
 #include "sgx_tseal.h"
 #include "EnclaveInitializer.h"
 #include "EnclaveToken.h"
+#include "EnclaveResult.h"
 #include "Persistence.h"
 #include <iostream>
 #include <fstream>
@@ -21,26 +22,16 @@ int load(const Persistence &persistence) {
     return load_status;
   }
 
-  std::cout << persistence.path() << " loaded" << std::endl;
-
   int unsealed;
   sgx_status_t ecall_status;
   sgx_status_t status = unseal(global_eid, &ecall_status,
                                (sgx_sealed_data_t*)sealed_data, sealed_size,
                                (uint8_t*)&unsealed, sizeof(unsealed));
 
-  if (status != SGX_SUCCESS) {
+  int validation_result = EnclaveResult::validate(status, ecall_status);
+  if (validation_result != SGX_SUCCESS) {
     std::cout << "Failed to unseal " << persistence.path() << std::endl;
-    std::cout << "SGX status: " << status << std::endl;
-
-    return status;
-  }
-
-  if (ecall_status != SGX_SUCCESS) {
-    std::cout << "Failed to unseal " << persistence.path() << std::endl;
-    std::cout << "ECall return value: " << ecall_status << std::endl;
-
-    return ecall_status;
+    return validation_result;
   }
 
   std::cout << persistence.path() << " unsealed to: " << unsealed << std::endl;

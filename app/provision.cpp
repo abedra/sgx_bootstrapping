@@ -2,14 +2,24 @@
 #include "sgx_urts.h"
 #include "sgx_tseal.h"
 #include "EnclaveInitializer.h"
+#include "EnclaveResult.h"
 #include "Persistence.h"
 #include <iostream>
 #include <fstream>
 
 sgx_enclave_id_t global_eid = 0;
 
-int provision(const Persistence &persistence) {
-  int number = 123;
+static int read_random_number() {
+  try {
+    std::string number_string;
+    std::getline(std::cin, number_string);
+    return std::stoi(number_string);
+  } catch (std::invalid_argument e) {
+    return -1;
+  }
+}
+
+static int provision(const Persistence &persistence, int number) {
   size_t sealed_size = sizeof(sgx_sealed_data_t) + sizeof(number);
   uint8_t* sealed_data = (uint8_t*)malloc(sealed_size);
   sgx_status_t ecall_status;
@@ -17,18 +27,10 @@ int provision(const Persistence &persistence) {
                              (uint8_t*)&number, sizeof(number),
                              (sgx_sealed_data_t*)sealed_data, sealed_size);
 
-  if (status != SGX_SUCCESS) {
+  int validation_result = EnclaveResult::validate(status, ecall_status);
+  if (validation_result != SGX_SUCCESS) {
     std::cout << "Failed to unseal " << persistence.path() << std::endl;
-    std::cout << "SGX status: " << status << std::endl;
-
-    return status;
-  }
-
-  if (ecall_status != SGX_SUCCESS) {
-    std::cout << "Failed to unseal " << persistence.path() << std::endl;
-    std::cout << "ECall return value: " << ecall_status << std::endl;
-
-    return ecall_status;
+    return validation_result;
   }
 
   persistence.save(sealed_data, sealed_size);
@@ -50,5 +52,11 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  return provision(persistence);
+  int number = read_random_number();
+  if (number == -1) {
+    std::cout << "Failed to read random number from stdin" << std::endl;
+    return number;
+  } else {
+    return provision(persistence, number);
+  }
 }
