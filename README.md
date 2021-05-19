@@ -20,7 +20,7 @@ By default, this program will compile in `SIM`, or Simulation mode. This ensures
 
 ## Execution
 
-There are two programs created during compilation, `provision`, and `unseal`. Running `unseal` without provisioning will result in an error because there's no sealed data to provide to the enclave. You may run unseal as much as you want. Running it will overwrite any existing sealed data files. To run `provision`, you will need to push the data you wish to seal to `stdin`. This program assumes you will provide an integer and will fail if one is not provided. You can use the linux shell variable `RANDOM` to provide this value under test. It should go without saying that this should never be used as a source of true randomness in a production setting.
+There are two programs created during compilation, `provision`, and `unseal`. Running `unseal` without provisioning will result in an error because there's no sealed data to provide to the enclave. You may run `provision` as much as you want. Running it will overwrite any existing sealed data files. To run `provision`, you will need to push the data you wish to seal to `stdin`. This program assumes you will provide an integer and will fail if one is not provided. You can use the linux shell variable `RANDOM` to provide this value under test. It should go without saying that this should never be used as a source of true randomness in a production setting.
 
 ```sh
 echo $RANDOM | ./provision
