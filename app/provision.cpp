@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     std::cout << path.string() << " does not exist, creating" << std::endl;
   }
 
-  if (EnclaveInitializer::init(&global_eid, "enclave.token", "enclave.signed.so") < 0) {
+  if (EnclaveInitializer::init(&global_eid, EnclaveToken{"enclave.token"}, "enclave.signed.so") < 0) {
     std::cout << "Failed to initialize enclave." << std::endl;
     return 1;
   }

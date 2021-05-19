@@ -2,6 +2,7 @@
 #include "sgx_urts.h"
 #include "sgx_tseal.h"
 #include "EnclaveInitializer.h"
+#include "EnclaveToken.h"
 #include "Persistence.h"
 #include <iostream>
 #include <fstream>
@@ -49,7 +50,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  if (EnclaveInitializer::init(&global_eid, "enclave.token", "enclave.signed.so") < 0) {
+  if (EnclaveInitializer::init(&global_eid, EnclaveToken{"enclave.token"}, "enclave.signed.so") < 0) {
     std::cout << "Failed to initialize enclave." << std::endl;
     return 1;
   }
