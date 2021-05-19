@@ -16,12 +16,12 @@ int load(const Persistence &persistence) {
   int load_status = persistence.load(sealed_data, sealed_size);
 
   if (load_status != SGX_SUCCESS) {
-    std::cout << "Could not load " << persistence.file_name() << std::endl;
+    std::cout << "Could not load " << persistence.path() << std::endl;
     free(sealed_data);
     return -1;
   }
 
-  std::cout << persistence.file_name() << " loaded" << std::endl;
+  std::cout << persistence.path() << " loaded" << std::endl;
 
   int unsealed;
   sgx_status_t ecall_status;
@@ -30,23 +30,23 @@ int load(const Persistence &persistence) {
                                (uint8_t*)&unsealed, sizeof(unsealed));
 
   if (status != SGX_SUCCESS || ecall_status != SGX_SUCCESS) {
-    std::cout << "Failed to unseal " << persistence.file_name() << std::endl;
+    std::cout << "Failed to unseal " << persistence.path() << std::endl;
     std::cout << "SGX status: " << status << std::endl;
     std::cout << "ECall return value: " << ecall_status << std::endl;
 
     return -1;
   }
 
-  std::cout << persistence.file_name() << " unsealed to: " << unsealed << std::endl;
+  std::cout << persistence.path() << " unsealed to: " << unsealed << std::endl;
 
   return 0;
 }
 
 int main(int argc, char** argv) {
-  std::filesystem::path path{"persistence.seal"};
+  Persistence persistence{std::filesystem::path{"persistence.seal"}};
 
-  if (!std::filesystem::exists(path)) {
-    std::cout << path.string() << " does not exist" << std::endl;
+  if (!persistence.exists()) {
+    std::cout << persistence.path() << " does not exist" << std::endl;
     return -1;
   }
 
@@ -55,5 +55,5 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  return load(Persistence{path});
+  return load(persistence);
 }

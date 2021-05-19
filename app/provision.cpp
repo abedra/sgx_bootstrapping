@@ -18,7 +18,7 @@ int provision(const Persistence &persistence) {
                              (sgx_sealed_data_t*)sealed_data, sealed_size);
 
   if (status != SGX_SUCCESS || ecall_status != SGX_SUCCESS) {
-    std::cout << "Failed to unseal " << persistence.file_name() << std::endl;
+    std::cout << "Failed to unseal " << persistence.path() << std::endl;
     std::cout << "SGX status: " << status << std::endl;
     std::cout << "ECall return value: " << ecall_status << std::endl;
 
@@ -27,16 +27,16 @@ int provision(const Persistence &persistence) {
 
   persistence.save(sealed_data, sealed_size);
 
-  std::cout << persistence.file_name() << " saved with value: " << number << std::endl;
+  std::cout << persistence.path() << " saved with value: " << number << std::endl;
 
   return 0;
 }
 
 int main(int argc, char** argv) {
-  std::filesystem::path path{"persistence.seal"};
+  Persistence persistence{std::filesystem::path{"persistence.seal"}};
 
-  if (!std::filesystem::exists(path)) {
-    std::cout << path.string() << " does not exist, creating" << std::endl;
+  if (!persistence.exists()) {
+    std::cout << persistence.path() << " does not exist, creating" << std::endl;
   }
 
   if (EnclaveInitializer::init(&global_eid, EnclaveToken{"enclave.token"}, "enclave.signed.so") < 0) {
@@ -44,5 +44,5 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  return provision(Persistence{path});
+  return provision(persistence);
 }

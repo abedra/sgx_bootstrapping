@@ -34,7 +34,11 @@ struct Persistence {
     return 0;
   }
 
-  const std::string file_name() const {
+  const bool exists() const {
+    return std::filesystem::exists(path_);
+  }
+
+  const std::string path() const {
     return path_.string();
   }
 
