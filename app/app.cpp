@@ -5,6 +5,7 @@
 #include "Persistence.h"
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 sgx_enclave_id_t global_eid = 0;
 
@@ -41,12 +42,17 @@ int load(const Persistence &persistence) {
 }
 
 int main(int argc, char** argv) {
+  std::filesystem::path path{"persistence.seal"};
+
+  if (!std::filesystem::exists(path)) {
+    std::cout << path.string() << " does not exist" << std::endl;
+    return -1;
+  }
+
   if (EnclaveInitializer::init(&global_eid, "enclave.token", "enclave.signed.so") < 0) {
     std::cout << "Failed to initialize enclave." << std::endl;
     return 1;
   }
 
-  Persistence persistence{"persistence.seal"};
-
-  return load(persistence);
+  return load(Persistence{path});
 }

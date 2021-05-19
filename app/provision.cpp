@@ -33,12 +33,16 @@ int provision(const Persistence &persistence) {
 }
 
 int main(int argc, char** argv) {
+  std::filesystem::path path{"persistence.seal"};
+
+  if (!std::filesystem::exists(path)) {
+    std::cout << path.string() << " does not exist, creating" << std::endl;
+  }
+
   if (EnclaveInitializer::init(&global_eid, "enclave.token", "enclave.signed.so") < 0) {
     std::cout << "Failed to initialize enclave." << std::endl;
     return 1;
   }
 
-  Persistence persistence{"persistence.seal"};
-
-  return provision(persistence);
+  return provision(Persistence{path});
 }

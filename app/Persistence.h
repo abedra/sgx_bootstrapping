@@ -1,14 +1,15 @@
 #pragma once
 
+#include <filesystem>
 #include <fstream>
 
 struct Persistence {
-  explicit Persistence(std::string file_name)
-    : file_name_(std::move(file_name))
+  explicit Persistence(std::filesystem::path path)
+    : path_(std::move(path))
   {}
 
   int save(const uint8_t* sealed_data, const size_t sealed_size) const {
-    std::ofstream file(file_name_, std::ios::out | std::ios::binary);
+    std::ofstream file(path_, std::ios::out | std::ios::binary);
 
     if (file.fail()) {
       return 1;
@@ -21,7 +22,7 @@ struct Persistence {
   }
 
   int load(uint8_t* sealed_data, const size_t sealed_size) const {
-    std::ifstream file(file_name_, std::ios::in | std::ios::binary);
+    std::ifstream file(path_, std::ios::in | std::ios::binary);
 
     if (file.fail()) {
       return 1;
@@ -33,22 +34,10 @@ struct Persistence {
     return 0;
   }
 
-  bool exists(void) const {
-    std::ifstream file(file_name_, std::ios::in | std::ios::binary);
-
-    if (file.fail()) {
-      return false;
-    }
-
-    file.close();
-
-    return true;
-  }
-
-  const std::string& file_name() const {
-    return file_name_;
+  const std::string file_name() const {
+    return path_.string();
   }
 
 private:
-  std::string file_name_;
+  std::filesystem::path path_;
 };
