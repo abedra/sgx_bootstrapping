@@ -17,19 +17,25 @@ int provision(const Persistence &persistence) {
                              (uint8_t*)&number, sizeof(number),
                              (sgx_sealed_data_t*)sealed_data, sealed_size);
 
-  if (status != SGX_SUCCESS || ecall_status != SGX_SUCCESS) {
+  if (status != SGX_SUCCESS) {
     std::cout << "Failed to unseal " << persistence.path() << std::endl;
     std::cout << "SGX status: " << status << std::endl;
+
+    return status;
+  }
+
+  if (ecall_status != SGX_SUCCESS) {
+    std::cout << "Failed to unseal " << persistence.path() << std::endl;
     std::cout << "ECall return value: " << ecall_status << std::endl;
 
-    return -1;
+    return ecall_status;
   }
 
   persistence.save(sealed_data, sealed_size);
 
   std::cout << persistence.path() << " saved with value: " << number << std::endl;
 
-  return 0;
+  return SGX_SUCCESS;
 }
 
 int main(int argc, char** argv) {
@@ -39,7 +45,7 @@ int main(int argc, char** argv) {
     std::cout << persistence.path() << " does not exist, creating" << std::endl;
   }
 
-  if (EnclaveInitializer::init(&global_eid, EnclaveToken{"enclave.token"}, "enclave.signed.so") < 0) {
+  if (EnclaveInitializer::init(&global_eid, EnclaveToken{"enclave.token"}, "enclave.signed.so") != SGX_SUCCESS) {
     std::cout << "Failed to initialize enclave." << std::endl;
     return 1;
   }

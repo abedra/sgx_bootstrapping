@@ -18,7 +18,7 @@ int load(const Persistence &persistence) {
   if (load_status != SGX_SUCCESS) {
     std::cout << "Could not load " << persistence.path() << std::endl;
     free(sealed_data);
-    return -1;
+    return load_status;
   }
 
   std::cout << persistence.path() << " loaded" << std::endl;
@@ -29,17 +29,23 @@ int load(const Persistence &persistence) {
                                (sgx_sealed_data_t*)sealed_data, sealed_size,
                                (uint8_t*)&unsealed, sizeof(unsealed));
 
-  if (status != SGX_SUCCESS || ecall_status != SGX_SUCCESS) {
+  if (status != SGX_SUCCESS) {
     std::cout << "Failed to unseal " << persistence.path() << std::endl;
     std::cout << "SGX status: " << status << std::endl;
+
+    return status;
+  }
+
+  if (ecall_status != SGX_SUCCESS) {
+    std::cout << "Failed to unseal " << persistence.path() << std::endl;
     std::cout << "ECall return value: " << ecall_status << std::endl;
 
-    return -1;
+    return ecall_status;
   }
 
   std::cout << persistence.path() << " unsealed to: " << unsealed << std::endl;
 
-  return 0;
+  return SGX_SUCCESS;
 }
 
 int main(int argc, char** argv) {
@@ -50,9 +56,9 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  if (EnclaveInitializer::init(&global_eid, EnclaveToken{"enclave.token"}, "enclave.signed.so") < 0) {
+  if (EnclaveInitializer::init(&global_eid, EnclaveToken{"enclave.token"}, "enclave.signed.so") != SGX_SUCCESS) {
     std::cout << "Failed to initialize enclave." << std::endl;
-    return 1;
+    return -1;
   }
 
   return load(persistence);
