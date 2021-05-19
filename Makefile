@@ -35,24 +35,10 @@ SGX_SDK ?= /opt/intel/sgxsdk
 SGX_MODE ?= SIM
 SGX_PRERELEASE=1
 SGX_ARCH ?= x64
-
-ifeq ($(shell getconf LONG_BIT), 32)
-	SGX_ARCH := x86
-else ifeq ($(findstring -m32, $(CXXFLAGS)), -m32)
-	SGX_ARCH := x86
-endif
-
-ifeq ($(SGX_ARCH), x86)
-	SGX_COMMON_CFLAGS := -m32
-	SGX_LIBRARY_PATH := $(SGX_SDK)/lib
-	SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x86/sgx_sign
-	SGX_EDGER8R := $(SGX_SDK)/bin/x86/sgx_edger8r
-else
-	SGX_COMMON_CFLAGS := -m64
-	SGX_LIBRARY_PATH := $(SGX_SDK)/lib64
-	SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x64/sgx_sign
-	SGX_EDGER8R := $(SGX_SDK)/bin/x64/sgx_edger8r
-endif
+SGX_COMMON_CFLAGS := -m64
+SGX_LIBRARY_PATH := $(SGX_SDK)/lib64
+SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x64/sgx_sign
+SGX_EDGER8R := $(SGX_SDK)/bin/x64/sgx_edger8r
 
 ifeq ($(SGX_DEBUG), 1)
 ifeq ($(SGX_PRERELEASE), 1)
@@ -74,12 +60,12 @@ else
 	Urts_Library_Name := sgx_urts
 endif
 
-App_Cpp_Files := app/app.cpp
-App_Include_Paths := -Iapp -I$(SGX_SDK)/include -Iinclude -Itest
+Unseal_Cpp_Files := app/unseal.cpp
+Unseal_Include_Paths := -Iapp -I$(SGX_SDK)/include -Iinclude -Itest
 Provision_Cpp_Files := app/provision.cpp
 Provision_Include_Paths := -Iapp -I$(SGX_SDK)/include -Iinclude -Itest
 
-App_C_Flags := $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(App_Include_Paths)
+Unseal_C_Flags := $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(Unseal_Include_Paths)
 Provision_C_Flags := $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(Provision_Include_Paths)
 
 # Three configuration modes - Debug, prerelease, release
@@ -87,30 +73,30 @@ Provision_C_Flags := $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(Provision_Incl
 #   Prerelease - Macro NDEBUG and EDEBUG enabled.
 #   Release - Macro NDEBUG enabled.
 ifeq ($(SGX_DEBUG), 1)
-		App_C_Flags += -DDEBUG -UNDEBUG -UEDEBUG
+		Unseal_C_Flags += -DDEBUG -UNDEBUG -UEDEBUG
 else ifeq ($(SGX_PRERELEASE), 1)
-		App_C_Flags += -DNDEBUG -DEDEBUG -UDEBUG
+		Unseal_C_Flags += -DNDEBUG -DEDEBUG -UDEBUG
 else
-		App_C_Flags += -DNDEBUG -UEDEBUG -UDEBUG
+		Unseal_C_Flags += -DNDEBUG -UEDEBUG -UDEBUG
 endif
 
-App_Cpp_Flags := $(App_C_Flags) -std=c++17
-App_Link_Flags := $(SGX_COMMON_CFLAGS) -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread
+Unseal_Cpp_Flags := $(Unseal_C_Flags) -std=c++17
+Unseal_Link_Flags := $(SGX_COMMON_CFLAGS) -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread
 Provision_Cpp_Flags := $(Provision_C_Flags) -std=c++17
 Provision_Link_Flags := $(SGX_COMMON_CFLAGS) -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread
 
 ifneq ($(SGX_MODE), HW)
-	App_Link_Flags += -lsgx_uae_service_sim
+	Unseal_Link_Flags += -lsgx_uae_service_sim
 	Provision_Link_Flags += -lsgx_uae_service_sim
 else
-	App_Link_Flags += -lsgx_uae_service
+	Unseal_Link_Flags += -lsgx_uae_service
 	Provision_Link_Flags += -lsgx_uae_service
 endif
 
-App_Cpp_Objects := $(App_Cpp_Files:.cpp=.o)
+Unseal_Cpp_Objects := $(Unseal_Cpp_Files:.cpp=.o)
 Provision_Cpp_Objects := $(Provision_Cpp_Files:.cpp=.o)
 
-App_Name := unseal
+Unseal_Name := unseal
 Provision_Name := provision
 
 ######## Enclave Settings ########
@@ -154,22 +140,22 @@ endif
 .PHONY: all run
 
 ifeq ($(Build_Mode), HW_RELEASE)
-all: $(App_Name) $(Provision_Name) $(Enclave_Name)
+all: $(Unseal_Name) $(Provision_Name) $(Enclave_Name)
 	@echo "The project has been built in release hardware mode."
-	@echo "Please sign the $(Enclave_Name) first with your signing key before you run the $(App_Name) to launch and access the enclave."
+	@echo "Please sign the $(Enclave_Name) first with your signing key before you run the $(Unseal_Name) to launch and access the enclave."
 	@echo "To sign the enclave use the command:"
 	@echo "   $(SGX_ENCLAVE_SIGNER) sign -key <your key> -enclave $(Enclave_Name) -out <$(Signed_Enclave_Name)> -config $(Enclave_Config_File)"
 	@echo "You can also sign the enclave using an external signing tool. See User's Guide for more details."
 	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
 else
-all: $(App_Name) $(Provision_Name) $(Signed_Enclave_Name)
+all: $(Unseal_Name) $(Provision_Name) $(Signed_Enclave_Name)
 endif
 
 run: all
 ifneq ($(Build_Mode), HW_RELEASE)
-	@$(CURDIR)/$(App_Name)
+	@$(CURDIR)/$(Unseal_Name)
 	@$(CURDIR)/$(Provision_Name)
-	@echo "RUN  =>  $(App_Name) [$(SGX_MODE)|$(SGX_ARCH), OK]"
+	@echo "RUN  =>  $(Unseal_Name) [$(SGX_MODE)|$(SGX_ARCH), OK]"
 endif
 
 ######## App Objects ########
@@ -179,15 +165,15 @@ app/enclave_u.c: $(SGX_EDGER8R) enclave/enclave.edl
 	@echo "GEN  =>  $@"
 
 app/enclave_u.o: app/enclave_u.c
-	@$(CC) $(App_C_Flags) -c $< -o $@
+	@$(CC) $(Unseal_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 app/%.o: app/%.cpp
-	@$(CXX) $(App_Cpp_Flags) -c $< -o $@
+	@$(CXX) $(Unseal_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
-$(App_Name): app/enclave_u.o $(App_Cpp_Objects)
-	@$(CXX) $^ -o $@ $(App_Link_Flags)
+$(Unseal_Name): app/enclave_u.o $(Unseal_Cpp_Objects)
+	@$(CXX) $^ -o $@ $(Unseal_Link_Flags)
 	@echo "LINK =>  $@"
 
 $(Provision_Name): app/enclave_u.o $(Provision_Cpp_Objects)
@@ -220,4 +206,4 @@ $(Signed_Enclave_Name): $(Enclave_Name)
 .PHONY: clean
 
 clean:
-	@rm -f $(App_Name) $(Provision_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) app/enclave_u.* $(Enclave_Cpp_Objects) enclave/enclave_t.*
+	@rm -f $(Unseal_Name) $(Provision_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(Unseal_Cpp_Objects) $(Provision_Cpp_Objects) app/enclave_u.* $(Enclave_Cpp_Objects) enclave/enclave_t.*
