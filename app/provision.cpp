@@ -29,7 +29,7 @@ static int provision(const Persistence &persistence, int number) {
 
   int validation_result = EnclaveResult::validate(status, ecall_status);
   if (validation_result != SGX_SUCCESS) {
-    std::cout << "Failed to unseal " << persistence.path() << std::endl;
+    std::cout << "Failed to seal " << persistence.path() << std::endl;
     return validation_result;
   }
 
